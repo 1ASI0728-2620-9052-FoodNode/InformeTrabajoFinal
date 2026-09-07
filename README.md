@@ -188,7 +188,7 @@
 
 <a id="student-outcome"></a>
 ## Student Outcome
-[⬆ Volver al índice](#top)
+
 
 | Criterio específico | Acciones realizadas | Conclusiones |
 |---|---|---|
@@ -197,7 +197,6 @@
 
 <a id="capitulo-i-introduccion"></a>
 # Capítulo I: Introducción
-[⬆ Volver al índice](#top)
 
 <a id="11-startup-profile"></a>
 ## 1.1. Startup Profile
@@ -236,7 +235,6 @@
 
 <a id="capitulo-ii-requirements-elicitation-analysis"></a>
 # Capítulo II: Requirements Elicitation & Analysis
-[⬆ Volver al índice](#top)
 
 <a id="21-competidores"></a>
 ## 2.1. Competidores
@@ -281,7 +279,6 @@
 
 <a id="capitulo-iii-requirements-specification"></a>
 # Capítulo III: Requirements Specification
-[⬆ Volver al índice](#top)
 
 <a id="31-to-be-scenario-mapping"></a>
 ## 3.1. To-Be Scenario Mapping
@@ -299,7 +296,6 @@
 
 <a id="capitulo-iv-strategic-level-software-design"></a>
 # Capítulo IV: Strategic-Level Software Design
-[⬆ Volver al índice](#top)
 
 <a id="41-strategic-level-attribute-driven-design"></a>
 ## 4.1. Strategic-Level Attribute-Driven Design
@@ -365,7 +361,6 @@
 
 <a id="capitulo-v-tactical-level-software-design"></a>
 # Capítulo V: Tactical-Level Software Design
-[⬆ Volver al índice](#top)
 
 <a id="5x-bounded-context"></a>
 ## 5.X. Bounded Context: <Bounded Context Name>
@@ -398,7 +393,6 @@
 
 <a id="capitulo-vi-solution-ux-design"></a>
 # Capítulo VI: Solution UX Design
-[⬆ Volver al índice](#top)
 
 <a id="61-style-guidelines"></a>
 ## 6.1. Style Guidelines
@@ -455,7 +449,6 @@
 
 <a id="capitulo-vii-product-implementation-validation-deployment"></a>
 # Capítulo VII: Product Implementation, Validation & Deployment
-[⬆ Volver al índice](#top)
 
 <a id="71-software-configuration-management"></a>
 ## 7.1. Software Configuration Management
@@ -521,7 +514,6 @@
 
 <a id="conclusiones"></a>
 # Conclusiones
-[⬆ Volver al índice](#top)
 
 <a id="conclusiones-y-recomendaciones"></a>
 ## Conclusiones y recomendaciones
@@ -533,10 +525,8 @@
 
 <a id="bibliografia"></a>
 # Bibliografía
-[⬆ Volver al índice](#top)
 
 ---
 
 <a id="anexos"></a>
 # Anexos
-[⬆ Volver al índice](#top)
