@@ -275,6 +275,51 @@
 <a id="24-ubiquitous-language"></a>
 ## 2.4. Ubiquitous Language
 
+El siguiente glosario recoge el lenguaje ubicuo (Ubiquitous Language) acordado por el equipo de Foodly, resultado de contrastar el vocabulario de negocio recogido en las entrevistas y el needfinding (Secciones 2.2 y 2.3) con los conceptos ya materializados como clases de dominio en los microservicios del backend (`foodly-identity-service`, `foodly-business-service`, `foodly-community-service` y `foodly-radar-service`). Este lenguaje es el que se utilizará de forma consistente en el resto del informe, en el modelo de dominio (Capítulo IV) y en el código fuente, para evitar traducciones o ambigüedades entre el equipo de negocio y el equipo técnico. Los términos se agrupan por Bounded Context.
+
+**Bounded Context: Identity**
+
+| Término | Definición | Bounded Context |
+|---|---|---|
+| Usuario (User) | Persona registrada en Foodly que puede autenticarse en la plataforma. Contiene credenciales (email, username, hash de contraseña) y datos de perfil básicos. | Identity |
+| Rol de usuario (UserRole) | Clasificación que determina qué puede hacer un usuario dentro de la plataforma: `CLIENT` (Explorador Gastronómico), `HUARIQUE_ADMIN` (Dueño de Huarique), `DRIVER` (repartidor, contemplado para evolución futura) y `PLATFORM_ADMIN` (administrador de la plataforma). | Identity |
+| Explorador Gastronómico | Nombre de negocio dado al usuario con rol `CLIENT`: la persona que usa Foodly para descubrir huariques cercanos, dejar reseñas y guardar favoritos. | Identity |
+| Dueño de Huarique | Nombre de negocio dado al usuario con rol `HUARIQUE_ADMIN`: el propietario de un huarique que usa Foodly para digitalizar y gestionar su negocio. | Identity |
+| Cuenta activa | Estado de un usuario (`active = true`) que le permite iniciar sesión; una cuenta desactivada no puede autenticarse. | Identity |
+| Token de sesión (Access Token) | Credencial JWT emitida al iniciar sesión o registrarse, que identifica al usuario y sus roles frente a los demás microservicios. | Identity |
+
+**Bounded Context: Business**
+
+| Término | Definición | Bounded Context |
+|---|---|---|
+| Huarique | Término peruano coloquial que da nombre al agregado raíz del negocio: un restaurante pequeño, informal y de sazón casera, identificado por su dueño, ubicación geográfica (latitud/longitud) e índice H3. Es el concepto central del dominio y del producto. | Business |
+| Perfil del huarique | Conjunto de atributos descriptivos de un huarique: nombre, dirección, tipo de cocina (`cuisineType`), rango de precios, teléfono, fotos y horario de atención. | Business |
+| Menú (Menu) | Entidad compuesta por categorías y productos que representa la carta vigente de un huarique. Cada huarique gestiona un único menú. | Business |
+| Producto (Product) | Ítem individual del menú de un huarique: plato o bebida con nombre, descripción, precio y disponibilidad. | Business |
+| Categoría del menú | Etiqueta que agrupa productos dentro del menú (p. ej. "Entradas", "Fondos", "Bebidas") para facilitar su exploración. | Business |
+| Horario de atención (DaySchedule) | Franja horaria declarada por el dueño para un día de la semana, indicando si el huarique atiende y en qué rango horario. | Business |
+| Estado de apertura (isOpen) | Bandera que indica si el huarique está actualmente abierto o cerrado, visible para los exploradores en tiempo real. | Business |
+
+**Bounded Context: Community**
+
+| Término | Definición | Bounded Context |
+|---|---|---|
+| Reseña (Review) | Opinión que un Explorador Gastronómico deja sobre un huarique, compuesta por una calificación (`rating`, de 1 a 5) y un comentario opcional. | Community |
+| Calificación (Rating) | Puntuación numérica de una reseña que resume la satisfacción del explorador con su experiencia en el huarique. | Community |
+| Favorito (FavoriteHuarique) | Marca que un explorador asigna a un huarique para guardarlo en su lista personal y volver a encontrarlo fácilmente. | Community |
+| Reputación del huarique | Percepción agregada de calidad de un huarique, construida a partir del conjunto de reseñas que la comunidad de exploradores ha dejado sobre él. | Community |
+
+**Bounded Context: GeoRadar**
+
+| Término | Definición | Bounded Context |
+|---|---|---|
+| Radar gastronómico | Nombre de negocio de la funcionalidad de búsqueda geoespacial de Foodly: permite a un explorador visualizar los huariques activos alrededor de su ubicación actual. | GeoRadar |
+| Geolocalización (GeoLocation) | Par de coordenadas (latitud, longitud) validadas que representan la posición de un usuario o de un huarique en el mundo real. | GeoRadar |
+| Índice H3 (H3 Index) | Identificador de una celda hexagonal generado por la librería Uber H3 a partir de una coordenada geográfica y una resolución fija; es la unidad mínima de indexación espacial que usa Foodly para ubicar huariques. | GeoRadar |
+| Zona de cobertura (Radar Ring / k-Ring) | Conjunto de celdas H3 vecinas a una celda central, calculado con un radio `k` (k-ring), que define el área que un explorador está "cubriendo" al buscar huariques cercanos. | GeoRadar |
+| Clúster de radar (RadarCluster) | Agrupación de huariques que comparten cercanía dentro de una misma zona de cobertura H3, concepto reservado para la evolución del motor de búsqueda geoespacial. | GeoRadar |
+| Celda hexagonal | Unidad de superficie geográfica en la que la indexación H3 divide el mapa; cada huarique pertenece a exactamente una celda según su ubicación. | GeoRadar |
+
 ---
 
 <a id="capitulo-iii-requirements-specification"></a>
@@ -283,14 +328,124 @@
 <a id="31-to-be-scenario-mapping"></a>
 ## 3.1. To-Be Scenario Mapping
 
+A partir de los escenarios *as-is* levantados en la Sección 2.3.4, el equipo proyectó el escenario *to-be*: la situación deseada una vez que Foodly opera como el punto de contacto digital entre los huariques y sus comensales. Se elaboró un escenario por cada actor principal identificado en los User Personas (Sección 2.3.1), evidenciando cómo el radar gastronómico basado en H3, la gestión digital del menú y el sistema de reseñas de la comunidad resuelven las fricciones detectadas en la etapa de Needfinding.
+
+**Actor: Explorador Gastronómico**
+
+| As-is (situación actual) | To-be (con Foodly) |
+|---|---|
+| El explorador camina por una zona desconocida sin saber qué huariques hay cerca, y suele terminar en una cadena de comida rápida por falta de información confiable. | El explorador abre el Radar de Foodly, obtiene su geolocalización y el sistema, apoyado en la indexación H3, le muestra en segundos los huariques activos dentro de su zona de cobertura (k-ring), ordenados por distancia. |
+| No tiene forma de conocer el menú o los precios de un huarique antes de entrar, por lo que evita locales que no reconoce. | El explorador selecciona un huarique del radar y revisa su perfil, su menú de productos vigente y las reseñas dejadas por otros exploradores, antes de decidir visitarlo. |
+| Una vez que prueba un huarique que le gustó, no tiene un lugar central donde recordarlo ni compartir su experiencia. | El explorador marca el huarique como favorito para encontrarlo después y deja una reseña con calificación y comentario, construyendo la reputación del huarique dentro de la comunidad de Foodly. |
+
+**Actor: Dueño de Huarique**
+
+| As-is (situación actual) | To-be (con Foodly) |
+|---|---|
+| El dueño depende del boca a boca del vecindario; su negocio es invisible para cualquier persona que no viva o trabaje cerca. | El dueño registra su huarique en Foodly con su ubicación, tipo de cocina y rango de precios; el sistema lo geolocaliza automáticamente en una celda H3, haciéndolo visible en el radar de todos los exploradores dentro de esa zona de cobertura. |
+| Actualizar su carta implica reimprimir volantes o pizarras físicas, lo que desincentiva mostrar cambios de precio o platos del día. | El dueño entra a su gestor de menú y actualiza categorías y productos (nombre, precio, disponibilidad) en minutos, quedando reflejado de inmediato en el perfil que ven los exploradores. |
+| No tiene forma de saber qué piensan sus clientes ni de responder ante una mala experiencia puntual. | El dueño revisa desde su panel las reseñas y calificaciones que los exploradores dejaron sobre su huarique, obteniendo una fuente directa y agregada de retroalimentación. |
+
 <a id="32-user-stories"></a>
 ## 3.2. User Stories
+
+Las siguientes User Stories se derivan directamente de la funcionalidad implementada en los cuatro Bounded Contexts del backend de Foodly y expuesta en el frontend (vistas de Explorador en `src/views/explorer` y de Dueño en `src/views/owner`). Se agrupan por Bounded Context siguiendo el lenguaje ubicuo definido en la Sección 2.4.
+
+**Bounded Context: Identity**
+
+| ID | User Story |
+|---|---|
+| US-01 | Como visitante, quiero registrarme en Foodly con mi email, username y contraseña, para crear una cuenta y acceder a la plataforma. |
+| US-02 | Como visitante, quiero elegir si me registro como Explorador Gastronómico o como Dueño de Huarique, para que Foodly me muestre las funcionalidades correspondientes a mi rol. |
+| US-03 | Como usuario registrado, quiero iniciar sesión con mi email y contraseña, para acceder de forma segura a mi cuenta. |
+| US-04 | Como usuario autenticado, quiero consultar mi perfil (nombre, email, teléfono, roles), para verificar que mis datos están correctos. |
+
+**Bounded Context: Business**
+
+| ID | User Story |
+|---|---|
+| US-05 | Como Dueño de Huarique, quiero registrar mi huarique con nombre, dirección, tipo de cocina, rango de precios y ubicación geográfica, para hacer visible mi negocio en Foodly. |
+| US-06 | Como Dueño de Huarique, quiero editar el perfil de mi huarique (datos, fotos, horario de atención y estado abierto/cerrado), para mantener actualizada la información que ven los exploradores. |
+| US-07 | Como Dueño de Huarique, quiero crear y editar las categorías y productos de mi menú, para reflejar mi carta y mis precios vigentes. |
+| US-08 | Como Explorador Gastronómico, quiero ver el perfil y el menú de un huarique, para conocer qué ofrece y decidir si lo visito. |
+
+**Bounded Context: Community**
+
+| ID | User Story |
+|---|---|
+| US-09 | Como Explorador Gastronómico, quiero dejar una reseña con calificación y comentario sobre un huarique que visité, para compartir mi experiencia con la comunidad. |
+| US-10 | Como Explorador Gastronómico, quiero ver las reseñas y calificaciones de un huarique, para evaluar su reputación antes de visitarlo. |
+| US-11 | Como Explorador Gastronómico, quiero marcar un huarique como favorito y consultar mi lista de favoritos, para volver a encontrarlo fácilmente. |
+| US-12 | Como Dueño de Huarique, quiero ver un resumen de las reseñas y calificaciones recibidas por mi huarique, para conocer la percepción de mis clientes. |
+
+**Bounded Context: GeoRadar**
+
+| ID | User Story |
+|---|---|
+| US-13 | Como Explorador Gastronómico, quiero activar el radar y compartir mi ubicación, para que Foodly calcule la celda H3 donde me encuentro. |
+| US-14 | Como Explorador Gastronómico, quiero ver la lista de huariques dentro de mi zona de cobertura (k-ring), ordenados por distancia, para decidir a cuál acercarme. |
+| US-15 | Como Explorador Gastronómico, quiero recibir un mensaje claro cuando no haya huariques registrados en mi zona, para saber que puedo recomendar uno en vez de asumir un error del sistema. |
 
 <a id="33-impact-mapping"></a>
 ## 3.3. Impact Mapping
 
+El Impact Mapping conecta el objetivo de negocio de Foodly con los actores que pueden ayudar a lograrlo, el cambio de comportamiento (impacto) que se busca provocar en cada uno, y las User Stories (entregables) de la Sección 3.2 que materializan ese impacto.
+
+```
+Goal: Convertir a Foodly en el canal digital que conecta huariques
+      con comensales dentro de un radio caminable, aumentando las
+      visitas a huariques y la visibilidad de sus dueños.
+│
+├── Actor: Explorador Gastronómico
+│   ├── Impact: Descubrir huariques confiables cerca de su ubicación
+│   │            en lugar de recurrir a cadenas conocidas
+│   │   └── Deliverables: US-13, US-14, US-15
+│   ├── Impact: Decidir con información (menú, precios, reputación)
+│   │            antes de visitar un huarique
+│   │   └── Deliverables: US-08, US-10
+│   └── Impact: Volver a encontrar y recomendar los huariques que
+│                le gustaron
+│       └── Deliverables: US-09, US-11
+│
+├── Actor: Dueño de Huarique
+│   ├── Impact: Hacer visible su negocio a exploradores cercanos
+│   │            sin depender solo del boca a boca
+│   │   └── Deliverables: US-05, US-06
+│   ├── Impact: Mantener su carta y precios actualizados sin
+│   │            costos de impresión ni demoras
+│   │   └── Deliverables: US-07
+│   └── Impact: Conocer la percepción de sus clientes para mejorar
+│                su servicio
+│       └── Deliverables: US-12
+│
+└── Actor: Usuario nuevo (Explorador o Dueño)
+    ├── Impact: Acceder a la plataforma de forma simple y segura,
+    │            eligiendo el rol correcto desde el registro
+    │   └── Deliverables: US-01, US-02, US-03, US-04
+```
+
 <a id="34-product-backlog"></a>
 ## 3.4. Product Backlog
+
+El Product Backlog agrupa las User Stories de la Sección 3.2 en épicas por Bounded Context, priorizadas con la técnica MoSCoW y estimadas en Story Points (secuencia de Fibonacci: 1, 2, 3, 5, 8). La columna Sprint refleja la ejecución real registrada hasta el momento, con base en dos sprints ya completados por el equipo (Sprint 1: cimientos de Identity y Business; Sprint 2: Community, GeoRadar y su integración de punta a punta en el frontend).
+
+| Épica | Historia de Usuario | Prioridad (MoSCoW) | Story Points | Sprint |
+|---|---|---|---|---|
+| Gestión de Identidad | US-01: Registro de cuenta | Must have | 3 | Sprint 1 |
+| Gestión de Identidad | US-02: Selección de rol al registrarse | Must have | 2 | Sprint 1 |
+| Gestión de Identidad | US-03: Inicio de sesión | Must have | 3 | Sprint 1 |
+| Gestión de Identidad | US-04: Consulta de perfil propio | Should have | 2 | Sprint 1 |
+| Gestión del Huarique | US-05: Registro del huarique | Must have | 5 | Sprint 1 |
+| Gestión del Huarique | US-06: Edición de perfil, fotos y horario | Should have | 5 | Sprint 2 |
+| Gestión del Huarique | US-07: Gestión de categorías y productos del menú | Must have | 8 | Sprint 1 |
+| Gestión del Huarique | US-08: Ver perfil y menú de un huarique | Must have | 3 | Sprint 1 |
+| Radar Gastronómico H3 | US-13: Activar radar y compartir ubicación | Must have | 5 | Sprint 2 |
+| Radar Gastronómico H3 | US-14: Listar huariques por zona de cobertura (k-ring) | Must have | 8 | Sprint 2 |
+| Radar Gastronómico H3 | US-15: Mensaje de zona sin huariques registrados | Should have | 2 | Sprint 2 |
+| Comunidad y Reputación | US-09: Dejar reseña con calificación | Must have | 5 | Sprint 2 |
+| Comunidad y Reputación | US-10: Ver reseñas de un huarique | Must have | 3 | Sprint 2 |
+| Comunidad y Reputación | US-11: Marcar y listar favoritos | Should have | 3 | Sprint 2 |
+| Comunidad y Reputación | US-12: Resumen de reseñas para el dueño | Could have | 5 | Sprint 2 |
 
 ---
 
