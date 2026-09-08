@@ -1,7 +1,7 @@
 <div style="page-break-inside: avoid; page-break-after: always;">
 
 <div style="text-align: center;">
-  <img src="assets/images/logo_upc.png" alt="Logo UPC" width="60"/>
+  <img src="assets/images/general/logo_upc.png" alt="Logo UPC" width="60"/>
 </div>
 
 <div style="text-align: center;">
